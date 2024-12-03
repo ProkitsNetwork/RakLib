@@ -12,4 +12,4 @@ updates:
     interval: monthly
   groups:
     all:
-      patterns: "*"
+      patterns: ["*"]
