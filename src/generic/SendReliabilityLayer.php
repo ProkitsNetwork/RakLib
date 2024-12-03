@@ -124,7 +124,7 @@ final class SendReliabilityLayer{
 	}
 
 	private function addToQueue(EncapsulatedPacket $pk, bool $immediate) : void{
-		if(PacketReliability::isReliable($pk->reliability)){
+		if($pk->reliability->isReliable()){
 			if($pk->messageIndex === null || $pk->messageIndex < $this->reliableWindowStart){
 				throw new \InvalidArgumentException("Cannot send a reliable packet with message index less than the window start ($pk->messageIndex < $this->reliableWindowStart)");
 			}
