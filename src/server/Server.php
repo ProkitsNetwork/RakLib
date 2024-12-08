@@ -44,7 +44,7 @@ use const SOCKET_ECONNRESET;
 
 class Server implements ServerInterface{
 
-	private const RAKLIB_TPS = 100;
+	private const RAKLIB_TPS = 1000;
 	private const RAKLIB_TIME_PER_TICK = 1 / self::RAKLIB_TPS;
 
 	protected int $receiveBytes = 0;
@@ -60,6 +60,7 @@ class Server implements ServerInterface{
 	protected string $name = "";
 
 	protected int $packetLimit = 200;
+	protected int $uploadPacketLimit = 50;
 
 	protected bool $shutdown = false;
 
@@ -305,15 +306,15 @@ class Server implements ServerInterface{
 		$out = new PacketSerializer(); //TODO: reusable streams to reduce allocations
 		$packet->encode($out);
 		try{
-			$this->sendBytes += $written = $this->socket->writePacket($out->getBuffer(), $address->getIp(), $address->getPort());
+			$this->sendBytes += $this->socket->writePacket($out->getBuffer(), $address->getIp(), $address->getPort());
 
 			$addressIp = $address->getIp();
 			if(isset($this->uploadIpSec[$addressIp])){
-				if(++$this->uploadIpSec[$addressIp] >= $this->packetLimit){
+				if(++$this->uploadIpSec[$addressIp] >= $this->uploadPacketLimit){
 					$this->blockAddress($addressIp);
 				}
 			}else{
-				$this->uploadIpSec[$addressIp] = 0;
+				$this->uploadIpSec[$addressIp] = 1;
 			}
 		}catch(SocketException $e){
 			$this->logger->debug($e->getMessage());
@@ -355,6 +356,10 @@ class Server implements ServerInterface{
 
 	public function setPacketsPerTickLimit(int $limit) : void{
 		$this->packetLimit = $limit;
+	}
+
+	public function setUploadPacketsPerTickLimit(int $limit) : void{
+		$this->uploadPacketLimit = $limit;
 	}
 
 	public function blockAddress(string $address, int $timeout = 300) : void{
