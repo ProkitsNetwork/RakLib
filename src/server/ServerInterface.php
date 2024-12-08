@@ -32,6 +32,8 @@ interface ServerInterface{
 
 	public function setPacketsPerTickLimit(int $limit) : void;
 
+	public function setUploadPacketsPerTickLimit(int $limit) : void;
+
 	public function blockAddress(string $address, int $timeout) : void;
 
 	public function unblockAddress(string $address) : void;
