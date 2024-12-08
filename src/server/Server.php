@@ -69,6 +69,8 @@ class Server implements ServerInterface{
 	protected array $block = [];
 	/** @var int[] string (address) => int (number of packets) */
 	protected array $ipSec = [];
+	/** @var int[] string (address) => int (number of packets written to client) */
+	protected array $uploadIpSec = [];
 
 	/** @var string[] regex filters used to block out unwanted raw packets */
 	protected array $rawPacketFilters = [];
@@ -174,6 +176,7 @@ class Server implements ServerInterface{
 		}
 
 		$this->ipSec = [];
+		$this->uploadIpSec = [];
 
 		if(!$this->shutdown and ($this->ticks % self::RAKLIB_TPS) === 0){
 			if($this->sendBytes > 0 or $this->receiveBytes > 0){
@@ -302,7 +305,16 @@ class Server implements ServerInterface{
 		$out = new PacketSerializer(); //TODO: reusable streams to reduce allocations
 		$packet->encode($out);
 		try{
-			$this->sendBytes += $this->socket->writePacket($out->getBuffer(), $address->getIp(), $address->getPort());
+			$this->sendBytes += $written = $this->socket->writePacket($out->getBuffer(), $address->getIp(), $address->getPort());
+
+			$addressIp = $address->getIp();
+			if(isset($this->uploadIpSec[$addressIp])){
+				if(++$this->uploadIpSec[$addressIp] >= $this->packetLimit){
+					$this->blockAddress($addressIp);
+				}
+			}else{
+				$this->uploadIpSec[$addressIp] = 0;
+			}
 		}catch(SocketException $e){
 			$this->logger->debug($e->getMessage());
 		}
