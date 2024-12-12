@@ -60,7 +60,7 @@ class Server implements ServerInterface{
 	protected string $name = "";
 
 	protected int $packetLimit = 200;
-	protected int $uploadPacketLimit = 100;
+	protected int $uploadPacketLimit = 1000;
 
 	protected bool $shutdown = false;
 
